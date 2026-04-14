@@ -10,6 +10,10 @@ class LocalModelService {
   static bool _isLoading = false;
   static String? _modelPath;
   static double downloadProgress = 0.0;
+  static int _lastSavedProgress = 0;
+
+  // Expected model file size in bytes (Gemma 2 2B Q4_K_M)
+  static const int expectedModelSize = 1599472640; // ~1.59 GB
 
   static const String modelUrl =
       'https://huggingface.co/lmstudio-community/gemma-2-2b-it-GGUF/resolve/main/gemma-2-2b-it-Q4_K_M.gguf';
@@ -42,35 +46,77 @@ class LocalModelService {
       final filePath = p.join(dir, modelFilename);
       final file = File(filePath);
 
+      // Check if file already exists and is complete
       if (await file.exists()) {
-        _modelPath = filePath;
-        _isLoading = false;
-        return;
+        final fileSize = await file.length();
+        if (fileSize >= expectedModelSize * 0.99) {
+          // File exists and is almost complete size (~99% or more)
+          _modelPath = filePath;
+          downloadProgress = 1.0;
+          onProgress?.call(1.0);
+          _isLoading = false;
+          return;
+        }
+        // File exists but incomplete - will resume download
       }
 
       final client = HttpClient();
+      client.connectionTimeout = const Duration(seconds: 30);
+
+      // Get file size if it exists (for resume capability)
+      int startByte = 0;
+      if (await file.exists()) {
+        startByte = await file.length();
+        print('Resuming download from byte: $startByte');
+      }
+
       final request = await client.getUrl(Uri.parse(modelUrl));
+
+      // Add range header for resume capability
+      if (startByte > 0) {
+        request.headers.add('Range', 'bytes=$startByte-');
+      }
+
       final response = await request.close();
 
-      final totalBytes = response.contentLength;
-      int receivedBytes = 0;
+      // Check response status
+      if (response.statusCode != 200 && response.statusCode != 206) {
+        throw Exception('Download failed with status: ${response.statusCode}');
+      }
 
-      final sink = file.openWrite();
+      final totalBytes = response.contentLength + startByte;
+      int receivedBytes = startByte;
+
+      // Open file in append mode if resuming, write mode if new
+      final sink = file.openWrite(
+        mode: startByte > 0 ? FileMode.append : FileMode.write,
+      );
 
       await response.forEach((chunk) {
         sink.add(chunk);
         receivedBytes += chunk.length;
         if (totalBytes > 0) {
           downloadProgress = receivedBytes / totalBytes;
-          onProgress?.call(downloadProgress);
+
+          // Report progress every 5MB or when significant change occurs
+          if ((receivedBytes - _lastSavedProgress) > 5242880) {
+            onProgress?.call(downloadProgress);
+            _lastSavedProgress = receivedBytes;
+            print('Download progress: ${(downloadProgress * 100).toStringAsFixed(1)}%');
+          }
         }
       });
 
       await sink.close();
       _modelPath = filePath;
       downloadProgress = 1.0;
+      onProgress?.call(1.0);
+      print('Download completed successfully');
+
+      client.close();
     } catch (e) {
       downloadProgress = 0.0;
+      print('Download error: $e');
       rethrow;
     } finally {
       _isLoading = false;

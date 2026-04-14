@@ -1,125 +1,75 @@
+### Android Implementation Guide
+
+#### 1. Add to MainActivity.kt
+
+```kotlin
 package com.example.flutter_application_1
 
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
+import android.provider.AlarmClock
+import android.provider.CalendarContract
+import android.provider.MediaStore
+import android.provider.Settings
 import android.os.BatteryManager
 import android.os.Environment
 import android.os.StatFs
 import android.net.ConnectivityManager
 import android.net.NetworkCapabilities
-import android.provider.AlarmClock
-import android.provider.CalendarContract
-import android.provider.MediaStore
-import android.provider.Settings
+import androidx.activity.result.contract.ActivityResultContracts
 import io.flutter.embedding.android.FlutterActivity
 import io.flutter.embedding.engine.FlutterEngine
 import io.flutter.plugin.common.MethodChannel
+import com.google.gson.Gson
 
 class MainActivity: FlutterActivity() {
     private val CHANNEL = "com.example.ai_assistant/tools"
-    private val MODEL_CHANNEL = "com.example.ai_assistant/model"
-    private lateinit var llamaService: LlamaService
+    private val gson = Gson()
 
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
         super.configureFlutterEngine(flutterEngine)
-
-        // Initialize Llama service
-        llamaService = LlamaService.getInstance(this)
-
-        // Tools channel
+        
         MethodChannel(flutterEngine.dartExecutor.binaryMessenger, CHANNEL).setMethodCallHandler { call, result ->
-            try {
-                when (call.method) {
-                    // Communication Tools
-                    "make_call" -> makeCall(call.argument("phone_number"), call.argument("direct"), result)
-                    "send_sms" -> sendSms(call.argument("phone_number"), call.argument("message"), result)
-                    "share_text" -> shareText(call.argument("text"), call.argument("package"), result)
-
-                    // Productivity Tools
-                    "set_alarm" -> setAlarm(
-                        call.argument("hour"),
-                        call.argument("minute"),
-                        call.argument("label"),
-                        call.argument("skip_ui"),
-                        result
-                    )
-                    "set_timer" -> setTimer(
-                        call.argument("seconds"),
-                        call.argument("label"),
-                        call.argument("skip_ui"),
-                        result
-                    )
-
-                    // Media Tools
-                    "open_camera" -> openCamera(result)
-                    "open_app" -> openApp(call.argument("package"), result)
-
-                    // Settings
-                    "open_settings" -> openSettings(call.argument("target"), result)
-
-                    // System Info
-                    "get_battery_status" -> getBatteryStatus(result)
-                    "get_storage_info" -> getStorageInfo(result)
-                    "get_network_status" -> getNetworkStatus(result)
-
-                    else -> result.notImplemented()
-                }
-            } catch (e: Exception) {
-                result.error("EXCEPTION", e.message, null)
-            }
-        }
-
-        // Model inference channel
-        MethodChannel(flutterEngine.dartExecutor.binaryMessenger, MODEL_CHANNEL).setMethodCallHandler { call, result ->
-            try {
-                when (call.method) {
-                    "load_model" -> {
-                        val modelPath = call.argument<String>("model_path")
-                        val success = if (llamaService.isNativeLibraryAvailable()) {
-                            modelPath?.let { llamaService.loadModel(it) } ?: false
-                        } else {
-                            // Native library not available, report false but don't crash
-                            false
-                        }
-                        result.success(mapOf("success" to success))
-                    }
-
-                    "unload_model" -> {
-                        val success = llamaService.unloadModel()
-                        result.success(mapOf("success" to success))
-                    }
-
-                    "is_model_loaded" -> {
-                        result.success(mapOf("loaded" to llamaService.isModelLoaded()))
-                    }
-
-                    "run_inference" -> {
-                        if (!llamaService.isNativeLibraryAvailable()) {
-                            result.error("NO_NATIVE_LIB", "Native library not available", null)
-                            return@setMethodCallHandler
-                        }
-
-                        val prompt = call.argument<String>("prompt") ?: return@setMethodCallHandler
-                        val maxTokens = call.argument<Int>("max_tokens") ?: 256
-                        val response = llamaService.runInference(prompt, maxTokens)
-                        if (response != null) {
-                            result.success(mapOf("response" to response))
-                        } else {
-                            result.error("INFERENCE_FAILED", "Model inference failed or not loaded", null)
-                        }
-                    }
-
-                    else -> result.notImplemented()
-                }
-            } catch (e: Exception) {
-                result.error("EXCEPTION", e.message, null)
+            when (call.method) {
+                // Communication Tools
+                "make_call" -> makeCall(call.argument("phone_number"), call.argument("direct"), result)
+                "send_sms" -> sendSms(call.argument("phone_number"), call.argument("message"), result)
+                "share_text" -> shareText(call.argument("text"), call.argument("package"), result)
+                
+                // Productivity Tools
+                "set_alarm" -> setAlarm(
+                    call.argument("hour"),
+                    call.argument("minute"),
+                    call.argument("label"),
+                    call.argument("skip_ui"),
+                    result
+                )
+                "set_timer" -> setTimer(
+                    call.argument("seconds"),
+                    call.argument("label"),
+                    call.argument("skip_ui"),
+                    result
+                )
+                
+                // Media Tools
+                "open_camera" -> openCamera(result)
+                "open_app" -> openApp(call.argument("package"), result)
+                
+                // Settings
+                "open_settings" -> openSettings(call.argument("target"), result)
+                
+                // System Info
+                "get_battery_status" -> getBatteryStatus(result)
+                "get_storage_info" -> getStorageInfo(result)
+                "get_network_status" -> getNetworkStatus(result)
+                
+                else -> result.notImplemented()
             }
         }
     }
 
-    // ==================== COMMUNICATION TOOLS ====================
-
+    // Communication Tools
     private fun makeCall(phoneNumber: String?, direct: Boolean?, result: MethodChannel.Result) {
         try {
             val number = phoneNumber ?: return result.error("ERROR", "Phone number required", null)
@@ -149,13 +99,13 @@ class MainActivity: FlutterActivity() {
         }
     }
 
-    private fun shareText(text: String?, packageName: String?, result: MethodChannel.Result) {
+    private fun shareText(text: String?, package_name: String?, result: MethodChannel.Result) {
         try {
             val shareText = text ?: return result.error("ERROR", "Text required", null)
             val intent = Intent(Intent.ACTION_SEND).apply {
                 type = "text/plain"
                 putExtra(Intent.EXTRA_TEXT, shareText)
-                packageName?.let { setPackage(it) }
+                package_name?.let { setPackage(it) }
             }
             val chooser = Intent.createChooser(intent, "Share via")
             startActivity(chooser)
@@ -165,9 +115,8 @@ class MainActivity: FlutterActivity() {
         }
     }
 
-    // ==================== PRODUCTIVITY TOOLS ====================
-
-    private fun setAlarm(hour: Int?, minute: Int?, label: String?, skipUi: Boolean?, result: MethodChannel.Result) {
+    // Productivity Tools
+    private fun setAlarm(hour: Int?, minute: Int?, label: String?, skip_ui: Boolean?, result: MethodChannel.Result) {
         try {
             val h = hour ?: return result.error("ERROR", "Hour required", null)
             val m = minute ?: return result.error("ERROR", "Minute required", null)
@@ -175,7 +124,7 @@ class MainActivity: FlutterActivity() {
                 putExtra(AlarmClock.EXTRA_HOUR, h)
                 putExtra(AlarmClock.EXTRA_MINUTES, m)
                 label?.let { putExtra(AlarmClock.EXTRA_MESSAGE, it) }
-                putExtra(AlarmClock.EXTRA_SKIP_UI, skipUi ?: false)
+                putExtra(AlarmClock.EXTRA_SKIP_UI, skip_ui ?: false)
             }
             startActivity(intent)
             result.success(mapOf("success" to true))
@@ -184,13 +133,13 @@ class MainActivity: FlutterActivity() {
         }
     }
 
-    private fun setTimer(seconds: Int?, label: String?, skipUi: Boolean?, result: MethodChannel.Result) {
+    private fun setTimer(seconds: Int?, label: String?, skip_ui: Boolean?, result: MethodChannel.Result) {
         try {
             val secs = seconds ?: return result.error("ERROR", "Seconds required", null)
             val intent = Intent(AlarmClock.ACTION_SET_TIMER).apply {
                 putExtra(AlarmClock.EXTRA_LENGTH, secs)
                 label?.let { putExtra(AlarmClock.EXTRA_MESSAGE, it) }
-                putExtra(AlarmClock.EXTRA_SKIP_UI, skipUi ?: false)
+                putExtra(AlarmClock.EXTRA_SKIP_UI, skip_ui ?: false)
             }
             startActivity(intent)
             result.success(mapOf("success" to true))
@@ -199,8 +148,7 @@ class MainActivity: FlutterActivity() {
         }
     }
 
-    // ==================== MEDIA TOOLS ====================
-
+    // Media Tools
     private fun openCamera(result: MethodChannel.Result) {
         try {
             val intent = Intent(MediaStore.ACTION_IMAGE_CAPTURE)
@@ -211,23 +159,18 @@ class MainActivity: FlutterActivity() {
         }
     }
 
-    private fun openApp(packageName: String?, result: MethodChannel.Result) {
+    private fun openApp(package_name: String?, result: MethodChannel.Result) {
         try {
-            val pkg = packageName ?: return result.error("ERROR", "Package name required", null)
+            val pkg = package_name ?: return result.error("ERROR", "Package name required", null)
             val launchIntent = packageManager.getLaunchIntentForPackage(pkg)
-            if (launchIntent != null) {
-                startActivity(launchIntent)
-                result.success(mapOf("success" to true))
-            } else {
-                result.error("NOT_FOUND", "App not installed", null)
-            }
+            launchIntent?.let { startActivity(it) }
+            result.success(mapOf("success" to true))
         } catch (e: Exception) {
             result.error("EXCEPTION", e.message, null)
         }
     }
 
-    // ==================== SETTINGS ====================
-
+    // Settings
     private fun openSettings(target: String?, result: MethodChannel.Result) {
         try {
             val action = when (target) {
@@ -246,8 +189,7 @@ class MainActivity: FlutterActivity() {
         }
     }
 
-    // ==================== SYSTEM INFO ====================
-
+    // System Info
     private fun getBatteryStatus(result: MethodChannel.Result) {
         try {
             val bm = getSystemService(Context.BATTERY_SERVICE) as BatteryManager
@@ -294,3 +236,31 @@ class MainActivity: FlutterActivity() {
         }
     }
 }
+```
+
+#### 2. Add Permissions to AndroidManifest.xml
+
+```xml
+<!-- Communication -->
+<uses-permission android:name="android.permission.CALL_PHONE" />
+<uses-permission android:name="android.permission.READ_CONTACTS" />
+<uses-permission android:name="android.permission.SEND_SMS" />
+
+<!-- Camera -->
+<uses-permission android:name="android.permission.CAMERA" />
+
+<!-- Calendar -->
+<uses-permission android:name="android.permission.READ_CALENDAR" />
+<uses-permission android:name="android.permission.WRITE_CALENDAR" />
+
+<!-- Storage -->
+<uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
+<uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
+
+<!-- Network -->
+<uses-permission android:name="android.permission.INTERNET" />
+<uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+
+<!-- Notifications -->
+<uses-permission android:name="android.permission.VIBRATE" />
+```
