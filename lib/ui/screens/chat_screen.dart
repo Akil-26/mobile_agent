@@ -7,6 +7,7 @@ import '../widgets/index.dart';
 import 'profile_screen.dart';
 import 'settings_screen.dart';
 import 'tools_management_screen.dart';
+import 'tools_test_screen.dart';
 
 class ChatScreen extends StatefulWidget {
   const ChatScreen({super.key});
@@ -115,6 +116,11 @@ class _ChatScreenState extends State<ChatScreen> {
                     ),
                   ),
                 );
+              } else if (value == 'test_tools') {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => const ToolsTestScreen()),
+                );
               } else if (value == 'settings') {
                 Navigator.push(
                   context,
@@ -147,6 +153,16 @@ class _ChatScreenState extends State<ChatScreen> {
                     Icon(Icons.build_outlined),
                     SizedBox(width: 12),
                     Text('Tools'),
+                  ],
+                ),
+              ),
+              const PopupMenuItem(
+                value: 'test_tools',
+                child: Row(
+                  children: [
+                    Icon(Icons.bug_report_outlined),
+                    SizedBox(width: 12),
+                    Text('Test Tools'),
                   ],
                 ),
               ),

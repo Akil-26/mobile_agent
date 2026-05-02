@@ -3,74 +3,134 @@ import '../models/tool_definitions.dart';
 import 'native_platform_service.dart';
 
 class ToolsService {
+  /// Convert native result to ToolResult
+  static ToolResult _toToolResult(
+    String toolName,
+    Map<String, dynamic> nativeResult,
+  ) {
+    return ToolResult(
+      toolName: toolName,
+      success: nativeResult['success'] ?? false,
+      error: nativeResult['error'] ?? nativeResult['message'],
+      data: nativeResult,
+    );
+  }
+
   /// Parse and execute a tool call
   static Future<ToolResult> executeTool(ToolCall toolCall) async {
     final tool = toolCall.tool;
     final args = toolCall.args;
 
-    switch (tool) {
-      // Communication
-      case 'make_call':
-        return NativePlatformService.makeCall(
-          args['phone_number'] ?? '',
-          direct: args['direct'] ?? false,
-        );
+    try {
+      switch (tool) {
+        // Communication
+        case 'make_call':
+          final result = await NativePlatformService.makeCall(
+            args['phoneNumber'] ?? args['phone_number'] ?? '',
+          );
+          return _toToolResult(tool, result);
 
-      case 'send_sms':
-        return NativePlatformService.sendSms(
-          args['phone_number'] ?? '',
-          args['message'] ?? '',
-        );
+        case 'send_sms':
+          final result = await NativePlatformService.sendSms(
+            args['phoneNumber'] ?? args['phone_number'] ?? '',
+            args['message'] ?? '',
+          );
+          return _toToolResult(tool, result);
 
-      case 'share_text':
-        return NativePlatformService.shareText(
-          args['text'] ?? '',
-          package: args['package'],
-        );
+        case 'send_email':
+          final result = await NativePlatformService.sendEmail(
+            recipient: args['recipient'] ?? '',
+            subject: args['subject'],
+            body: args['body'],
+          );
+          return _toToolResult(tool, result);
 
-      // Productivity
-      case 'set_alarm':
-        return NativePlatformService.setAlarm(
-          args['hour'] ?? 0,
-          args['minute'] ?? 0,
-          label: args['label'],
-          skipUi: args['skip_ui'] ?? false,
-        );
+        // File Operations
+        case 'read_file':
+          final result = await NativePlatformService.readFile(
+            args['path'] ?? '',
+          );
+          return _toToolResult(tool, result);
 
-      case 'set_timer':
-        return NativePlatformService.setTimer(
-          args['seconds'] ?? 0,
-          label: args['label'],
-          skipUi: args['skip_ui'] ?? false,
-        );
+        case 'write_file':
+          final result = await NativePlatformService.writeFile(
+            args['path'] ?? '',
+            args['content'] ?? '',
+          );
+          return _toToolResult(tool, result);
 
-      // Media
-      case 'open_camera':
-        return NativePlatformService.openCamera();
+        case 'delete_file':
+          final result = await NativePlatformService.deleteFile(
+            args['path'] ?? '',
+          );
+          return _toToolResult(tool, result);
 
-      case 'open_app':
-        return NativePlatformService.openApp(args['package'] ?? '');
+        case 'list_files':
+          final result = await NativePlatformService.listFiles(
+            args['directory'],
+          );
+          return _toToolResult(tool, result);
 
-      // Settings
-      case 'open_settings':
-        return NativePlatformService.openSettings(args['target'] ?? 'general');
+        // System Tools
+        case 'get_device_info':
+          final result = await NativePlatformService.getDeviceInfo();
+          return _toToolResult(tool, result);
 
-      // System Info
-      case 'get_battery_status':
-        return NativePlatformService.getBatteryStatus();
+        case 'set_alarm':
+          final result = await NativePlatformService.setAlarm(
+            hour: args['hour'] ?? 0,
+            minute: args['minute'] ?? 0,
+            message: args['message'] ?? args['label'],
+          );
+          return _toToolResult(tool, result);
 
-      case 'get_storage_info':
-        return NativePlatformService.getStorageInfo();
+        case 'open_app':
+          final result = await NativePlatformService.openApp(
+            args['packageName'] ?? args['package'] ?? '',
+          );
+          return _toToolResult(tool, result);
 
-      case 'get_network_status':
-        return NativePlatformService.getNetworkStatus();
+        case 'get_battery_status':
+          final result = await NativePlatformService.getBatteryStatus();
+          return _toToolResult(tool, result);
 
-      default:
-        return ToolResult(
-          toolName: tool,
-          success: false,
-          error: 'Unknown tool: $tool',
-        );
+        // Contacts
+        case 'get_contacts':
+          final result = await NativePlatformService.getContacts();
+          return _toToolResult(tool, result);
+
+        case 'search_contacts':
+          final result = await NativePlatformService.searchContacts(
+            args['query'] ?? '',
+          );
+          return _toToolResult(tool, result);
+
+        // Permissions
+        case 'request_permissions':
+          final result = await NativePlatformService.requestPermissions(
+            List<String>.from(args['permissions'] ?? []),
+          );
+          return _toToolResult(tool, result);
+
+        case 'check_permission':
+          final result = await NativePlatformService.checkPermission(
+            args['permission'] ?? '',
+          );
+          return _toToolResult(tool, result);
+
+        default:
+          return ToolResult(
+            toolName: tool,
+            success: false,
+            error: 'Unknown tool: $tool',
+          );
+      }
+    } catch (e) {
+      return ToolResult(
+        toolName: tool,
+        success: false,
+        error: e.toString(),
+      );
     }
   }
 
@@ -101,19 +161,54 @@ class ToolsService {
     }
 
     switch (result.toolName) {
+      // Device Info
+      case 'get_device_info':
+        final info = result.data?['deviceInfo'] ?? {};
+        return '📱 Device: ${info['brand']} ${info['model']} (Android ${info['androidVersion']})';
+
       case 'get_battery_status':
-        final battery = result.data?['battery_percent'] ?? 0;
-        final charging = result.data?['is_charging'] ?? false;
-        return '🔋 Battery: $battery% ${charging ? '(Charging)' : ''}';
+        final level = result.data?['level'] ?? 0;
+        final charging = result.data?['isCharging'] ?? false;
+        return '🔋 Battery: $level% ${charging ? '(Charging)' : ''}';
 
-      case 'get_storage_info':
-        final free = result.data?['free_bytes'] ?? 0;
-        final total = result.data?['total_bytes'] ?? 0;
-        return '💾 Storage: ${_formatBytes(free)} free / ${_formatBytes(total)} total';
+      // Contacts
+      case 'get_contacts':
+        final count = result.data?['count'] ?? 0;
+        return '👥 Found $count contacts';
 
-      case 'get_network_status':
-        final connection = result.data?['connection'] ?? 'unknown';
-        return '📶 Network: $connection';
+      case 'search_contacts':
+        final count = result.data?['count'] ?? 0;
+        final query = result.data?['query'] ?? '';
+        return '🔍 Found $count contacts matching "$query"';
+
+      // File Operations
+      case 'read_file':
+        final size = result.data?['size'] ?? 0;
+        return '📄 File read (${_formatBytes(size)})';
+
+      case 'write_file':
+        final path = result.data?['path'] ?? '';
+        return '✍️ File written: $path';
+
+      case 'delete_file':
+        return '🗑️ File deleted';
+
+      case 'list_files':
+        final count = result.data?['count'] ?? 0;
+        return '📁 Listed $count files';
+
+      // Communication
+      case 'make_call':
+      case 'send_sms':
+      case 'send_email':
+        return '✅ ${result.toolName} executed';
+
+      // System
+      case 'set_alarm':
+      case 'open_app':
+      case 'request_permissions':
+      case 'check_permission':
+        return '✅ ${result.data?['message'] ?? 'Operation completed'}';
 
       default:
         return '✅ ${result.toolName} executed successfully';

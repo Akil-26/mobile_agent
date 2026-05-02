@@ -1,259 +1,346 @@
 import 'package:flutter/services.dart';
-import '../models/tool_definitions.dart';
+import 'dart:io';
 
+/// Service for calling native Android/iOS platform code
+/// Handles all system-level operations (calls, SMS, files, etc.)
 class NativePlatformService {
-  static const methodChannel = MethodChannel('com.example.ai_assistant/tools');
+  static const platform = MethodChannel('com.mobile_agent/native_tools');
 
-  /// Communication Tools
+  // ═══════════════════════════════════════════════════════════
+  // COMMUNICATION TOOLS
+  // ═══════════════════════════════════════════════════════════
 
-  static Future<ToolResult> makeCall(String phoneNumber, {bool direct = false}) async {
+  /// Make a phone call
+  /// Returns: {success: bool, message: String}
+  static Future<Map<String, dynamic>> makeCall(String phoneNumber) async {
     try {
-      final Map<dynamic, dynamic>? result = await methodChannel.invokeMethod(
-        'make_call',
-        {
-          'phone_number': phoneNumber,
-          'direct': direct,
-        },
-      );
-      return ToolResult(
-        toolName: 'make_call',
-        success: result?['success'] ?? false,
-        data: Map<String, dynamic>.from(result ?? {}),
-      );
-    } catch (e) {
-      return ToolResult(
-        toolName: 'make_call',
-        success: false,
-        error: e.toString(),
-      );
+      final result = await platform.invokeMethod('make_call', {
+        'phoneNumber': phoneNumber,
+      });
+      return Map<String, dynamic>.from(result);
+    } on PlatformException catch (e) {
+      return {
+        'success': false,
+        'error': e.code,
+        'message': e.message ?? 'Failed to make call',
+      };
     }
   }
 
-  static Future<ToolResult> sendSms(String phoneNumber, String message) async {
+  /// Send SMS
+  /// Returns: {success: bool, message: String}
+  static Future<Map<String, dynamic>> sendSms(
+    String phoneNumber,
+    String message,
+  ) async {
     try {
-      final Map<dynamic, dynamic>? result = await methodChannel.invokeMethod(
-        'send_sms',
-        {
-          'phone_number': phoneNumber,
-          'message': message,
-        },
-      );
-      return ToolResult(
-        toolName: 'send_sms',
-        success: result?['success'] ?? false,
-        data: Map<String, dynamic>.from(result ?? {}),
-      );
-    } catch (e) {
-      return ToolResult(
-        toolName: 'send_sms',
-        success: false,
-        error: e.toString(),
-      );
+      final result = await platform.invokeMethod('send_sms', {
+        'phoneNumber': phoneNumber,
+        'message': message,
+      });
+      return Map<String, dynamic>.from(result);
+    } on PlatformException catch (e) {
+      return {
+        'success': false,
+        'error': e.code,
+        'message': e.message ?? 'Failed to send SMS',
+      };
     }
   }
 
-  static Future<ToolResult> shareText(String text, {String? package}) async {
-    try {
-      final Map<dynamic, dynamic>? result = await methodChannel.invokeMethod(
-        'share_text',
-        {
-          'text': text,
-          'package': package,
-        },
-      );
-      return ToolResult(
-        toolName: 'share_text',
-        success: result?['success'] ?? false,
-        data: Map<String, dynamic>.from(result ?? {}),
-      );
-    } catch (e) {
-      return ToolResult(
-        toolName: 'share_text',
-        success: false,
-        error: e.toString(),
-      );
-    }
-  }
-
-  /// Productivity Tools
-
-  static Future<ToolResult> setAlarm(
-    int hour,
-    int minute, {
-    String? label,
-    bool skipUi = false,
+  /// Send email (opens email client)
+  /// Returns: {success: bool, message: String}
+  static Future<Map<String, dynamic>> sendEmail({
+    required String recipient,
+    String? subject,
+    String? body,
   }) async {
     try {
-      final Map<dynamic, dynamic>? result = await methodChannel.invokeMethod(
-        'set_alarm',
-        {
-          'hour': hour,
-          'minute': minute,
-          'label': label,
-          'skip_ui': skipUi,
-        },
-      );
-      return ToolResult(
-        toolName: 'set_alarm',
-        success: result?['success'] ?? false,
-        data: Map<String, dynamic>.from(result ?? {}),
-      );
-    } catch (e) {
-      return ToolResult(
-        toolName: 'set_alarm',
-        success: false,
-        error: e.toString(),
-      );
+      final result = await platform.invokeMethod('send_email', {
+        'recipient': recipient,
+        'subject': subject,
+        'body': body,
+      });
+      return Map<String, dynamic>.from(result);
+    } on PlatformException catch (e) {
+      return {
+        'success': false,
+        'error': e.code,
+        'message': e.message ?? 'Failed to send email',
+      };
     }
   }
 
-  static Future<ToolResult> setTimer(
-    int seconds, {
-    String? label,
-    bool skipUi = false,
+  // ═══════════════════════════════════════════════════════════
+  // FILE OPERATIONS
+  // ═══════════════════════════════════════════════════════════
+
+  /// Read file contents
+  /// Returns: {success: bool, content: String, size: int}
+  static Future<Map<String, dynamic>> readFile(String path) async {
+    try {
+      final result = await platform.invokeMethod('read_file', {
+        'path': path,
+      });
+      return Map<String, dynamic>.from(result);
+    } on PlatformException catch (e) {
+      return {
+        'success': false,
+        'error': e.code,
+        'message': e.message ?? 'Failed to read file',
+      };
+    }
+  }
+
+  /// Write content to file
+  /// Returns: {success: bool, path: String, message: String}
+  static Future<Map<String, dynamic>> writeFile(
+    String path,
+    String content,
+  ) async {
+    try {
+      final result = await platform.invokeMethod('write_file', {
+        'path': path,
+        'content': content,
+      });
+      return Map<String, dynamic>.from(result);
+    } on PlatformException catch (e) {
+      return {
+        'success': false,
+        'error': e.code,
+        'message': e.message ?? 'Failed to write file',
+      };
+    }
+  }
+
+  /// Delete file
+  /// Returns: {success: bool, message: String}
+  static Future<Map<String, dynamic>> deleteFile(String path) async {
+    try {
+      final result = await platform.invokeMethod('delete_file', {
+        'path': path,
+      });
+      return Map<String, dynamic>.from(result);
+    } on PlatformException catch (e) {
+      return {
+        'success': false,
+        'error': e.code,
+        'message': e.message ?? 'Failed to delete file',
+      };
+    }
+  }
+
+  /// List files in directory
+  /// Returns: {success: bool, files: List, count: int}
+  static Future<Map<String, dynamic>> listFiles([String? directory]) async {
+    try {
+      final result = await platform.invokeMethod('list_files', {
+        'directory': directory,
+      });
+      return Map<String, dynamic>.from(result);
+    } on PlatformException catch (e) {
+      return {
+        'success': false,
+        'error': e.code,
+        'message': e.message ?? 'Failed to list files',
+      };
+    }
+  }
+
+  // ═══════════════════════════════════════════════════════════
+  // SYSTEM TOOLS
+  // ═══════════════════════════════════════════════════════════
+
+  /// Get device information
+  /// Returns: {success: bool, deviceInfo: Map}
+  static Future<Map<String, dynamic>> getDeviceInfo() async {
+    try {
+      final result = await platform.invokeMethod('get_device_info');
+      return Map<String, dynamic>.from(result);
+    } on PlatformException catch (e) {
+      return {
+        'success': false,
+        'error': e.code,
+        'message': e.message ?? 'Failed to get device info',
+      };
+    }
+  }
+
+  /// Set alarm
+  /// Returns: {success: bool, message: String}
+  static Future<Map<String, dynamic>> setAlarm({
+    required int hour,
+    required int minute,
+    String? message,
   }) async {
     try {
-      final Map<dynamic, dynamic>? result = await methodChannel.invokeMethod(
-        'set_timer',
-        {
-          'seconds': seconds,
-          'label': label,
-          'skip_ui': skipUi,
-        },
-      );
-      return ToolResult(
-        toolName: 'set_timer',
-        success: result?['success'] ?? false,
-        data: Map<String, dynamic>.from(result ?? {}),
-      );
-    } catch (e) {
-      return ToolResult(
-        toolName: 'set_timer',
-        success: false,
-        error: e.toString(),
-      );
+      final result = await platform.invokeMethod('set_alarm', {
+        'hour': hour,
+        'minute': minute,
+        'message': message ?? 'Alarm',
+      });
+      return Map<String, dynamic>.from(result);
+    } on PlatformException catch (e) {
+      return {
+        'success': false,
+        'error': e.code,
+        'message': e.message ?? 'Failed to set alarm',
+      };
     }
   }
 
-  /// Media Tools
-
-  static Future<ToolResult> openCamera() async {
+  /// Open app by package name
+  /// Returns: {success: bool, message: String}
+  static Future<Map<String, dynamic>> openApp(String packageName) async {
     try {
-      final Map<dynamic, dynamic>? result = await methodChannel.invokeMethod(
-        'open_camera',
-      );
-      return ToolResult(
-        toolName: 'open_camera',
-        success: result?['success'] ?? false,
-        data: Map<String, dynamic>.from(result ?? {}),
-      );
-    } catch (e) {
-      return ToolResult(
-        toolName: 'open_camera',
-        success: false,
-        error: e.toString(),
-      );
+      final result = await platform.invokeMethod('open_app', {
+        'packageName': packageName,
+      });
+      return Map<String, dynamic>.from(result);
+    } on PlatformException catch (e) {
+      return {
+        'success': false,
+        'error': e.code,
+        'message': e.message ?? 'Failed to open app',
+      };
     }
   }
 
-  static Future<ToolResult> openApp(String package) async {
+  /// Get battery status
+  /// Returns: {success: bool, level: int, isCharging: bool}
+  static Future<Map<String, dynamic>> getBatteryStatus() async {
     try {
-      final Map<dynamic, dynamic>? result = await methodChannel.invokeMethod(
-        'open_app',
-        {'package': package},
-      );
-      return ToolResult(
-        toolName: 'open_app',
-        success: result?['success'] ?? false,
-        data: Map<String, dynamic>.from(result ?? {}),
-      );
-    } catch (e) {
-      return ToolResult(
-        toolName: 'open_app',
-        success: false,
-        error: e.toString(),
-      );
+      final result = await platform.invokeMethod('get_battery_status');
+      return Map<String, dynamic>.from(result);
+    } on PlatformException catch (e) {
+      return {
+        'success': false,
+        'error': e.code,
+        'message': e.message ?? 'Failed to get battery status',
+      };
     }
   }
 
-  /// Settings
-
-  static Future<ToolResult> openSettings(String target) async {
+  /// Get all contacts
+  /// Returns: {success: bool, contacts: List, count: int}
+  static Future<Map<String, dynamic>> getContacts() async {
     try {
-      final Map<dynamic, dynamic>? result = await methodChannel.invokeMethod(
-        'open_settings',
-        {'target': target},
-      );
-      return ToolResult(
-        toolName: 'open_settings',
-        success: result?['success'] ?? false,
-        data: Map<String, dynamic>.from(result ?? {}),
-      );
-    } catch (e) {
-      return ToolResult(
-        toolName: 'open_settings',
-        success: false,
-        error: e.toString(),
-      );
+      final result = await platform.invokeMethod('get_contacts');
+      return Map<String, dynamic>.from(result);
+    } on PlatformException catch (e) {
+      return {
+        'success': false,
+        'error': e.code,
+        'message': e.message ?? 'Failed to get contacts',
+      };
     }
   }
 
-  /// System Info
-
-  static Future<ToolResult> getBatteryStatus() async {
+  /// Search contacts by name
+  /// Returns: {success: bool, contacts: List, count: int, query: String}
+  static Future<Map<String, dynamic>> searchContacts(String query) async {
     try {
-      final Map<dynamic, dynamic>? result = await methodChannel.invokeMethod(
-        'get_battery_status',
-      );
-      return ToolResult(
-        toolName: 'get_battery_status',
-        success: true,
-        data: Map<String, dynamic>.from(result ?? {}),
-      );
-    } catch (e) {
-      return ToolResult(
-        toolName: 'get_battery_status',
-        success: false,
-        error: e.toString(),
-      );
+      final result = await platform.invokeMethod('search_contacts', {
+        'query': query,
+      });
+      return Map<String, dynamic>.from(result);
+    } on PlatformException catch (e) {
+      return {
+        'success': false,
+        'error': e.code,
+        'message': e.message ?? 'Failed to search contacts',
+      };
     }
   }
 
-  static Future<ToolResult> getStorageInfo() async {
+  // ═══════════════════════════════════════════════════════════
+  // PERMISSION HANDLING
+  // ═══════════════════════════════════════════════════════════
+
+  /// Request multiple permissions
+  /// Returns: {success: bool, message: String}
+  static Future<Map<String, dynamic>> requestPermissions(
+    List<String> permissions,
+  ) async {
     try {
-      final Map<dynamic, dynamic>? result = await methodChannel.invokeMethod(
-        'get_storage_info',
-      );
-      return ToolResult(
-        toolName: 'get_storage_info',
-        success: true,
-        data: Map<String, dynamic>.from(result ?? {}),
-      );
-    } catch (e) {
-      return ToolResult(
-        toolName: 'get_storage_info',
-        success: false,
-        error: e.toString(),
-      );
+      final result = await platform.invokeMethod('request_permissions', {
+        'permissions': permissions,
+      });
+      return Map<String, dynamic>.from(result);
+    } on PlatformException catch (e) {
+      return {
+        'success': false,
+        'error': e.code,
+        'message': e.message ?? 'Failed to request permissions',
+      };
     }
   }
 
-  static Future<ToolResult> getNetworkStatus() async {
+  /// Check if a permission is granted
+  /// Returns: {granted: bool, permission: String}
+  static Future<Map<String, dynamic>> checkPermission(String permission) async {
     try {
-      final Map<dynamic, dynamic>? result = await methodChannel.invokeMethod(
-        'get_network_status',
-      );
-      return ToolResult(
-        toolName: 'get_network_status',
-        success: true,
-        data: Map<String, dynamic>.from(result ?? {}),
-      );
-    } catch (e) {
-      return ToolResult(
-        toolName: 'get_network_status',
-        success: false,
-        error: e.toString(),
-      );
+      final result = await platform.invokeMethod('check_permission', {
+        'permission': permission,
+      });
+      return Map<String, dynamic>.from(result);
+    } on PlatformException catch (e) {
+      return {
+        'success': false,
+        'error': e.code,
+        'message': e.message ?? 'Failed to check permission',
+      };
     }
+  }
+
+  // ═══════════════════════════════════════════════════════════
+  // HELPER METHODS
+  // ═══════════════════════════════════════════════════════════
+
+  /// Check if running on Android
+  static bool get isAndroid => Platform.isAndroid;
+
+  /// Check if running on iOS
+  static bool get isIOS => Platform.isIOS;
+
+  /// Get platform-specific permissions list for common operations
+  static List<String> getRequiredPermissions({
+    bool needCalls = false,
+    bool needSms = false,
+    bool needContacts = false,
+    bool needStorage = false,
+    bool needLocation = false,
+  }) {
+    final permissions = <String>[];
+
+    if (isAndroid) {
+      if (needCalls) {
+        permissions.add('android.permission.CALL_PHONE');
+      }
+      if (needSms) {
+        permissions.addAll([
+          'android.permission.SEND_SMS',
+          'android.permission.READ_SMS',
+        ]);
+      }
+      if (needContacts) {
+        permissions.add('android.permission.READ_CONTACTS');
+      }
+      if (needStorage) {
+        permissions.addAll([
+          'android.permission.READ_EXTERNAL_STORAGE',
+          'android.permission.WRITE_EXTERNAL_STORAGE',
+        ]);
+      }
+      if (needLocation) {
+        permissions.addAll([
+          'android.permission.ACCESS_FINE_LOCATION',
+          'android.permission.ACCESS_COARSE_LOCATION',
+        ]);
+      }
+    }
+
+    return permissions;
   }
 }
+

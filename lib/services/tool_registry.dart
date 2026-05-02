@@ -9,12 +9,7 @@ class ToolRegistry {
       category: 'communication',
       requiresConfirmation: true,
       schema: {
-        'phone_number': {'type': 'string', 'description': 'Phone number to call'},
-        'direct': {
-          'type': 'boolean',
-          'description': 'Direct call or open dialer',
-          'default': false,
-        },
+        'phoneNumber': {'type': 'string', 'description': 'Phone number to call'},
       },
     ),
     ToolDefinition(
@@ -23,25 +18,97 @@ class ToolRegistry {
       category: 'communication',
       requiresConfirmation: true,
       schema: {
-        'phone_number': {'type': 'string', 'description': 'Recipient phone number'},
+        'phoneNumber': {'type': 'string', 'description': 'Recipient phone number'},
         'message': {'type': 'string', 'description': 'Message content'},
       },
     ),
     ToolDefinition(
-      name: 'share_text',
-      description: 'Share text via apps',
+      name: 'send_email',
+      description: 'Send an email (opens email client)',
       category: 'communication',
+      requiresConfirmation: false,
       schema: {
-        'text': {'type': 'string', 'description': 'Text to share'},
-        'package': {
+        'recipient': {'type': 'string', 'description': 'Email recipient'},
+        'subject': {'type': 'string', 'description': 'Email subject (optional)'},
+        'body': {'type': 'string', 'description': 'Email body (optional)'},
+      },
+    ),
+
+    // File Operations
+    ToolDefinition(
+      name: 'read_file',
+      description: 'Read contents of a file',
+      category: 'files',
+      requiresConfirmation: false,
+      schema: {
+        'path': {'type': 'string', 'description': 'File path to read'},
+      },
+    ),
+    ToolDefinition(
+      name: 'write_file',
+      description: 'Write content to a file',
+      category: 'files',
+      requiresConfirmation: true,
+      schema: {
+        'path': {'type': 'string', 'description': 'File path to write to'},
+        'content': {'type': 'string', 'description': 'Content to write'},
+      },
+    ),
+    ToolDefinition(
+      name: 'delete_file',
+      description: 'Delete a file',
+      category: 'files',
+      requiresConfirmation: true,
+      schema: {
+        'path': {'type': 'string', 'description': 'File path to delete'},
+      },
+    ),
+    ToolDefinition(
+      name: 'list_files',
+      description: 'List files in a directory',
+      category: 'files',
+      requiresConfirmation: false,
+      schema: {
+        'directory': {
           'type': 'string',
-          'description': 'Target app package (optional)',
-          'examples': ['com.whatsapp', 'com.telegram'],
+          'description': 'Directory path (optional, defaults to app files directory)',
         },
       },
     ),
 
-    // Productivity Tools
+    // Device Information
+    ToolDefinition(
+      name: 'get_device_info',
+      description: 'Get device information',
+      category: 'info',
+      schema: {},
+    ),
+    ToolDefinition(
+      name: 'get_battery_status',
+      description: 'Get device battery information',
+      category: 'info',
+      schema: {},
+    ),
+
+    // Contacts
+    ToolDefinition(
+      name: 'get_contacts',
+      description: 'Get all device contacts',
+      category: 'contacts',
+      requiresConfirmation: true,
+      schema: {},
+    ),
+    ToolDefinition(
+      name: 'search_contacts',
+      description: 'Search device contacts by name',
+      category: 'contacts',
+      requiresConfirmation: false,
+      schema: {
+        'query': {'type': 'string', 'description': 'Contact name to search for'},
+      },
+    ),
+
+    // System Tools
     ToolDefinition(
       name: 'set_alarm',
       description: 'Set an alarm for specific time',
@@ -49,27 +116,8 @@ class ToolRegistry {
       schema: {
         'hour': {'type': 'integer', 'description': 'Hour (0-23)'},
         'minute': {'type': 'integer', 'description': 'Minute (0-59)'},
-        'label': {'type': 'string', 'description': 'Alarm label'},
-        'skip_ui': {'type': 'boolean', 'description': 'Skip UI', 'default': false},
+        'message': {'type': 'string', 'description': 'Alarm label (optional)'},
       },
-    ),
-    ToolDefinition(
-      name: 'set_timer',
-      description: 'Set a timer for X seconds',
-      category: 'productivity',
-      schema: {
-        'seconds': {'type': 'integer', 'description': 'Duration in seconds'},
-        'label': {'type': 'string', 'description': 'Timer label'},
-        'skip_ui': {'type': 'boolean', 'description': 'Skip UI', 'default': false},
-      },
-    ),
-
-    // Media Tools
-    ToolDefinition(
-      name: 'open_camera',
-      description: 'Open device camera',
-      category: 'media',
-      schema: {},
     ),
     ToolDefinition(
       name: 'open_app',
@@ -77,7 +125,7 @@ class ToolRegistry {
       category: 'media',
       requiresConfirmation: false,
       schema: {
-        'package': {
+        'packageName': {
           'type': 'string',
           'description': 'App package name',
           'examples': ['com.whatsapp', 'com.google.android.youtube'],
@@ -85,38 +133,30 @@ class ToolRegistry {
       },
     ),
 
-    // Settings
+    // Permissions
     ToolDefinition(
-      name: 'open_settings',
-      description: 'Open device settings',
-      category: 'settings',
+      name: 'request_permissions',
+      description: 'Request device permissions',
+      category: 'system',
+      requiresConfirmation: true,
       schema: {
-        'target': {
-          'type': 'string',
-          'description': 'Settings target',
-          'enum': ['wifi', 'bluetooth', 'sound', 'display', 'general'],
+        'permissions': {
+          'type': 'array',
+          'description': 'List of Android permissions',
+          'examples': ['android.permission.CALL_PHONE', 'android.permission.READ_CONTACTS'],
         },
       },
     ),
-
-    // System Info
     ToolDefinition(
-      name: 'get_battery_status',
-      description: 'Get device battery information',
-      category: 'info',
-      schema: {},
-    ),
-    ToolDefinition(
-      name: 'get_storage_info',
-      description: 'Get device storage information',
-      category: 'info',
-      schema: {},
-    ),
-    ToolDefinition(
-      name: 'get_network_status',
-      description: 'Get device network status',
-      category: 'info',
-      schema: {},
+      name: 'check_permission',
+      description: 'Check if a permission is granted',
+      category: 'system',
+      schema: {
+        'permission': {
+          'type': 'string',
+          'description': 'Android permission to check',
+        },
+      },
     ),
   ];
 
