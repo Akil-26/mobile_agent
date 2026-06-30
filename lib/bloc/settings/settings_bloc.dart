@@ -24,8 +24,9 @@ class SettingsBloc extends Cubit<SettingsState> {
 
       // If model is downloading, show resume option
       if (LocalModelService.isLoading) {
-        emit(ModelDownloading(progress: LocalModelService.downloadProgress));
+        if (!isClosed) emit(ModelDownloading(progress: LocalModelService.downloadProgress));
       } else {
+        if (isClosed) return;
         emit(SettingsInitialized(
           selectedModel: OllamaService.model,
           ollamaUrl: OllamaService.baseUrl,
@@ -37,7 +38,7 @@ class SettingsBloc extends Cubit<SettingsState> {
         ));
       }
     } catch (e) {
-      emit(SettingsError(error: e.toString()));
+      if (!isClosed) emit(SettingsError(error: e.toString()));
     }
   }
 
@@ -45,22 +46,26 @@ class SettingsBloc extends Cubit<SettingsState> {
     try {
       // Check if download is already in progress
       if (LocalModelService.isLoading) {
-        emit(SettingsError(
+        if (!isClosed) {
+          emit(SettingsError(
           error: 'Download already in progress. It will continue in the background.',
         ));
+        }
         return;
       }
 
+      if (isClosed) return;
       emit(ModelDownloading(progress: 0.0));
 
       await LocalModelService.downloadModel(onProgress: (progress) {
         onProgress?.call(progress);
-        emit(ModelDownloading(progress: progress));
+        if (!isClosed) emit(ModelDownloading(progress: progress));
       });
 
       await LocalModelService.loadModel();
       final size = await LocalModelService.getModelSizeBytes();
 
+      if (isClosed) return;
       emit(SettingsInitialized(
         selectedModel: OllamaService.model,
         ollamaUrl: OllamaService.baseUrl,
@@ -71,7 +76,7 @@ class SettingsBloc extends Cubit<SettingsState> {
         modelSizeBytes: size,
       ));
     } catch (e) {
-      emit(SettingsError(error: 'Download failed: $e'));
+      if (!isClosed) emit(SettingsError(error: 'Download failed: $e'));
     }
   }
 
@@ -80,6 +85,7 @@ class SettingsBloc extends Cubit<SettingsState> {
       await LocalModelService.deleteModel();
       final size = await LocalModelService.getModelSizeBytes();
 
+      if (isClosed) return;
       emit(SettingsInitialized(
         selectedModel: OllamaService.model,
         ollamaUrl: OllamaService.baseUrl,
@@ -90,7 +96,7 @@ class SettingsBloc extends Cubit<SettingsState> {
         modelSizeBytes: size,
       ));
     } catch (e) {
-      emit(SettingsError(error: e.toString()));
+      if (!isClosed) emit(SettingsError(error: e.toString()));
     }
   }
 
@@ -98,10 +104,10 @@ class SettingsBloc extends Cubit<SettingsState> {
     try {
       final success = await LocalModelService.loadModel();
       if (!success) {
-        emit(SettingsError(error: 'Failed to load model'));
+        if (!isClosed) emit(SettingsError(error: 'Failed to load model'));
       }
     } catch (e) {
-      emit(SettingsError(error: e.toString()));
+      if (!isClosed) emit(SettingsError(error: e.toString()));
     }
   }
 

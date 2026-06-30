@@ -49,22 +49,14 @@ class ModelDownloading extends SettingsState {
 
   ModelDownloading({
     required this.progress,
-    String selectedModel = 'gemma3:1b',
-    String ollamaUrl = 'http://localhost:11434',
-    bool darkMode = true,
-    bool notifications = true,
-    bool saveHistory = true,
-    bool localModelDownloaded = false,
-    int modelSizeBytes = 0,
-  }) : super(
-    selectedModel: selectedModel,
-    ollamaUrl: ollamaUrl,
-    darkMode: darkMode,
-    notifications: notifications,
-    saveHistory: saveHistory,
-    localModelDownloaded: localModelDownloaded,
-    modelSizeBytes: modelSizeBytes,
-  );
+    super.selectedModel = 'gemma3:1b',
+    super.ollamaUrl = 'http://localhost:11434',
+    super.darkMode = true,
+    super.notifications = true,
+    super.saveHistory = true,
+    super.localModelDownloaded = false,
+    super.modelSizeBytes = 0,
+  });
 }
 
 class SettingsError extends SettingsState {
@@ -72,20 +64,12 @@ class SettingsError extends SettingsState {
 
     SettingsError({
     required this.error,
-    String selectedModel = 'gemma3:1b',
-    String ollamaUrl = 'http://localhost:11434',
-    bool darkMode = true,
-    bool notifications = true,
-    bool saveHistory = true,
-    bool localModelDownloaded = false,
-    int modelSizeBytes = 0,
-  }) : super(
-    selectedModel: selectedModel,
-    ollamaUrl: ollamaUrl,
-    darkMode: darkMode,
-    notifications: notifications,
-    saveHistory: saveHistory,
-    localModelDownloaded: localModelDownloaded,
-    modelSizeBytes: modelSizeBytes,
-  );
+    super.selectedModel = 'gemma3:1b',
+    super.ollamaUrl = 'http://localhost:11434',
+    super.darkMode = true,
+    super.notifications = true,
+    super.saveHistory = true,
+    super.localModelDownloaded = false,
+    super.modelSizeBytes = 0,
+  });
 }
