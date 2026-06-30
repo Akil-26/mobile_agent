@@ -70,7 +70,7 @@ class ModelDownloading extends SettingsState {
 class SettingsError extends SettingsState {
   final String error;
 
-  SettingsError({
+    SettingsError({
     required this.error,
     String selectedModel = 'gemma3:1b',
     String ollamaUrl = 'http://localhost:11434',
