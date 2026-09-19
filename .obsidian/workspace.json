@@ -13,12 +13,12 @@
             "state": {
               "type": "markdown",
               "state": {
-                "file": "okf/services/tools-service.md",
+                "file": "okf/issues/native-inference-disconnected.md",
                 "mode": "source",
                 "source": false
               },
               "icon": "lucide-file",
-              "title": "tools-service"
+              "title": "native-inference-disconnected"
             }
           }
         ]
@@ -94,7 +94,7 @@
             "state": {
               "type": "backlink",
               "state": {
-                "file": "okf/services/tools-service.md",
+                "file": "okf/log.md",
                 "collapseAll": false,
                 "extraContext": false,
                 "sortOrder": "alphabetical",
@@ -104,7 +104,7 @@
                 "unlinkedCollapsed": true
               },
               "icon": "links-coming-in",
-              "title": "Backlinks for tools-service"
+              "title": "Backlinks for log"
             }
           },
           {
@@ -113,12 +113,12 @@
             "state": {
               "type": "outgoing-link",
               "state": {
-                "file": "okf/services/tools-service.md",
+                "file": "okf/log.md",
                 "linksCollapsed": false,
                 "unlinkedCollapsed": true
               },
               "icon": "links-going-out",
-              "title": "Outgoing links from tools-service"
+              "title": "Outgoing links from log"
             }
           },
           {
@@ -156,13 +156,13 @@
             "state": {
               "type": "outline",
               "state": {
-                "file": "okf/services/tools-service.md",
+                "file": "okf/log.md",
                 "followCursor": false,
                 "showSearch": false,
                 "searchQuery": ""
               },
               "icon": "lucide-list",
-              "title": "Outline of tools-service"
+              "title": "Outline of log"
             }
           }
         ]
@@ -185,18 +185,23 @@
   },
   "active": "b6665ff118e57426",
   "lastOpenFiles": [
+    "okf/issues/index.md",
+    "okf/architecture/bloc-layer.md",
+    "okf/log.md",
+    "build/80665ca4",
     "build/app/intermediates/stripped_native_libs/debug/stripDebugDebugSymbols/out/lib/armeabi-v7a/libflutter.so",
     "build/app/intermediates/stripped_native_libs/debug/stripDebugDebugSymbols/out/lib/x86_64/libflutter.so",
-    "build/app/intermediates/stripped_native_libs/debug/stripDebugDebugSymbols/out/lib/armeabi-v7a/libflutter.so.temp-stream-59564c",
-    "build/app/intermediates/stripped_native_libs/debug/stripDebugDebugSymbols/out/lib/x86_64/libflutter.so.temp-stream-68f7d9",
-    "build/app/intermediates/stripped_native_libs/debug/stripDebugDebugSymbols/out/lib/armeabi-v7a",
-    "build/app/intermediates/stripped_native_libs/debug/stripDebugDebugSymbols/out/lib/x86_64",
+    "build/app/intermediates/stripped_native_libs/debug/stripDebugDebugSymbols/out/lib/armeabi-v7a/libflutter.so.temp-stream-d14402",
+    "build/app/intermediates/stripped_native_libs/debug/stripDebugDebugSymbols/out/lib/x86_64/libflutter.so.temp-stream-adb129",
     "build/app/intermediates/merged_native_libs/debug/mergeDebugNativeLibs/out/lib/x86_64/libflutter.so",
     "build/app/intermediates/merged_native_libs/debug/mergeDebugNativeLibs/out/lib/x86_64",
-    "build/app/intermediates/incremental/debug-mergeJavaRes/zip-cache/NSZz2KQPziDMrSGCQ7PLceFXzoE=",
-    "build/app/intermediates/incremental/debug-mergeJavaRes/zip-cache/6JsLisSYuvyWbopZMzv+MH4PYMg=",
     "build/app/intermediates/merged_native_libs/debug/mergeDebugNativeLibs/out/lib/arm64-v8a/libflutter.so",
-    "okf/architecture/bloc-layer.md",
+    "build/app/intermediates/merged_native_libs/debug/mergeDebugNativeLibs/out/lib/armeabi-v7a/libflutter.so",
+    "build/app/intermediates/merged_native_libs/debug/mergeDebugNativeLibs/out/lib/armeabi-v7a",
+    "okf/index.md",
+    "ios/Runner/Assets.xcassets/LaunchImage.imageset/README.md",
+    "README.md",
+    "okf/services/tools-service.md",
     "NATIVE_TOOLS_TESTING.md",
     "ANDROID_SETUP.md",
     "ARCHITECTURE.md"

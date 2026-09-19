@@ -3,7 +3,11 @@ type: Bundle
 title: Mobile Agent — Knowledge Bundle
 description: On-device AI assistant Flutter app with tool-calling, native Android bridge, and a roadmap toward full device automation.
 okf_version: "0.1"
-tags: [flutter, android, llm, agent]
+tags:
+  - flutter
+  - android
+  - llm
+  - agent
 ---
 
 # Mobile Agent

@@ -146,8 +146,12 @@ class LocalModelService {
       final dir = await modelDirectory;
       _modelPath = p.join(dir, modelFilename);
 
+      // llama_cpp_dart v0.2.2 defaults to "libmtmd.so" on Android (multimodal
+      // wrapper). We only need text inference, so point it at libllama.so.
       if (nativeLibraryPath != null) {
         Llama.libraryPath = nativeLibraryPath!;
+      } else if (Platform.isAndroid) {
+        Llama.libraryPath = 'libllama.so';
       }
 
       final loadCommand = LlamaLoad(
